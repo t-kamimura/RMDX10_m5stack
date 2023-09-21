@@ -6,8 +6,8 @@
 #define LOOPTIME 5  //[ms]
 #define TEXTSIZE 1
 
-int max_vel = 10;
-int tgt_angle = 45;
+int max_vel = 30;   //[deg/s]
+int tgt_angle = 45; //[deg]
 
 unsigned char len = 0;
 unsigned char cmd_buf[8], reply_buf[8];
@@ -65,7 +65,7 @@ void setup()
   }
   Serial.println();
   M5.Lcd.printf("\n");
-  
+
   data[2] = vel_byte[0];
   data[3] = vel_byte[1];
   data[4] = pos_byte[0];

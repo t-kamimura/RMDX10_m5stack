@@ -2,7 +2,7 @@
 #include <M5Stack.h>
 #include <mcp_can_m5.h>
 #include <SPI.h>
-//#include <RMDx8Arduino.h>
+// #include <RMDx8Arduino.h>
 
 /*SAMD core*/
 #ifdef ARDUINO_SAMD_VARIANT_COMPLIANCE
@@ -11,7 +11,7 @@
 #define SERIAL Serial
 #endif
 
-#define BAUDRATE 115200 //シリアル通信がボトルネックにならないよう，速めに設定しておく
+#define BAUDRATE 115200 // シリアル通信がボトルネックにならないよう，速めに設定しておく
 #define LOOPTIME 20     //[ms]
 #define ENDTIME 10000   //[ms]
 #define TEXTSIZE 2
@@ -23,15 +23,16 @@ char msgString[128];
 unsigned long timer[3];
 byte pos_byte[4];
 
-const uint16_t MOTOR_ADDRESS = 0x141; //0x140 + ID(1~32)
+const uint16_t MOTOR_ADDRESS = 0x141; // 0x140 + ID(1~32)
 const int SPI_CS_PIN = 12;
 
 #define CAN0_INT 15          // Set INT to pin 2
 MCP_CAN_M5 CAN0(SPI_CS_PIN); // Set CS to pin 10
 
-int64_t present_pos = 0;
-int64_t pos_buf = 0;
-int32_t vel = 0;
+int32_t present_pos = 0;
+double angle = 0.0;
+double angle_buf = 0.0;
+double vel = 0;
 
 void init_can();
 void write_can();
@@ -50,13 +51,6 @@ void setup()
     init_can();
     Serial.println("Test CAN...\n");
     timer[0] = millis();
-
-    read_can();
-
-    present_pos = 0;
-    present_pos = reply_buf[1] + (reply_buf[2] << 8) + (reply_buf[3] << 16) + (reply_buf[4] << 24) + (reply_buf[5] << 32) + (reply_buf[6] << 40)+ (reply_buf[7] << 48);
-    present_pos = present_pos * 0.01 / 6;
-    pos_buf = present_pos;
 }
 
 void loop()
@@ -96,11 +90,11 @@ void loop()
 
         M5.update();
 
-        pos_buf = present_pos;
+        angle_buf = angle;
         present_pos = 0;
         present_pos = reply_buf[4] + (reply_buf[5] << 8) + (reply_buf[6] << 16) + (reply_buf[7] << 24);
-        int32_t horn_pos = present_pos * 0.01;
-        vel = (present_pos - pos_buf)/(LOOPTIME*0.01);
+        angle = present_pos * 0.01;
+        vel = (angle - angle_buf) / (LOOPTIME * 0.001);
 
         // DEBUG(この処理重いので注意)
         M5.Lcd.setCursor(0, 40);
@@ -114,12 +108,12 @@ void loop()
         M5.Lcd.setCursor(0, 100);
         M5.Lcd.printf("HRN:            ");
         M5.Lcd.setCursor(0, 100);
-        M5.Lcd.printf("HRN: %d", horn_pos);
+        M5.Lcd.printf("HRN: %f", angle);
         M5.Lcd.setCursor(0, 130);
         M5.Lcd.printf("VEL:            ");
         M5.Lcd.setCursor(0, 130);
-        M5.Lcd.printf("VEL: %d", vel);
-
+        M5.Lcd.printf("VEL: %f", vel);
+        
         timer[2] = millis() - timer[1];
         if (timer[2] < LOOPTIME)
         {
